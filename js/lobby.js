@@ -3,7 +3,9 @@ import { auth } from "./firebase-config.js";
 
 import {
     watchRoom,
-    stopWatchingRoomListener
+    stopWatchingRoomListener,
+    canStartGame,
+    getOnlinePlayerCount
 } from "./multiplayer.js";
 
 import {
@@ -32,7 +34,8 @@ let chatInitialized = false;
    02. ELEMENTS
    ========================================= */
 
-const roomSection = document.getElementById("roomSection");
+const roomSection =
+    document.getElementById("roomSection");
 
 
 /* =========================================
@@ -66,7 +69,9 @@ export function openLobby(roomCode, onStart = null) {
 
     if (!roomSection) {
 
-        console.error("DUOVA: Room section was not found.");
+        console.error(
+            "DUOVA: Room section was not found."
+        );
 
         return;
 
@@ -77,7 +82,6 @@ export function openLobby(roomCode, onStart = null) {
     currentRoomCode = roomCode.toUpperCase();
 
     startGameCallback = onStart;
-
 
     roomSection.innerHTML = `
 
@@ -128,7 +132,10 @@ export function openLobby(roomCode, onStart = null) {
 
                 </div>
 
-                <div id="lobbyPlayers" class="lobby-players">
+                <div
+                    id="lobbyPlayers"
+                    class="lobby-players"
+                >
 
                     <p class="lobby-loading">
                         Loading players...
@@ -145,7 +152,10 @@ export function openLobby(roomCode, onStart = null) {
                     Connecting to room...
                 </p>
 
-                <button id="startLobbyGame" disabled>
+                <button
+                    id="startLobbyGame"
+                    disabled
+                >
                     Waiting for players
                 </button>
 
@@ -154,7 +164,6 @@ export function openLobby(roomCode, onStart = null) {
         </div>
 
     `;
-
 
     setupLobbyButtons();
 
@@ -180,17 +189,11 @@ function setupLobbyButtons() {
 
         try {
 
-            await navigator.clipboard.writeText(currentRoomCode);
+            await navigator.clipboard.writeText(
+                currentRoomCode
+            );
 
             copyButton.textContent = "Copied";
-
-            setTimeout(() => {
-
-                if (copyButton.isConnected) {
-                    copyButton.textContent = "Copy Code";
-                }
-
-            }, 1500);
 
         } catch (error) {
 
@@ -210,37 +213,31 @@ function setupLobbyButtons() {
 
         if (!currentRoomData) return;
 
-        const players = Object.values(
-            currentRoomData.players || {}
-        );
+        const playerId = auth.currentUser?.uid;
 
-        const onlinePlayers = players.filter(
-            player => player.online === true
-        );
+        if (!canStartGame(currentRoomData, playerId)) {
 
-        const isHost =
-            currentRoomData.hostId === auth.currentUser?.uid;
+            updateLobbyControls(currentRoomData);
 
+            return;
 
-        if (!isHost) return;
+        }
 
-
-        if (onlinePlayers.length < 2) {
+        if (typeof startGameCallback !== "function") {
 
             updateLobbyStatus(
-                "At least 2 players are needed."
+                "Game start has not been connected yet."
             );
 
             return;
 
         }
 
+        startButton.disabled = true;
 
-        if (typeof startGameCallback === "function") {
+        startButton.textContent = "Starting...";
 
-            startGameCallback(currentRoomData);
-
-        }
+        startGameCallback(currentRoomData);
 
     });
 
@@ -261,6 +258,8 @@ function listenToLobby() {
 
             if (!room) {
 
+                currentRoomData = null;
+
                 updateLobbyStatus(
                     "Room could not be found."
                 );
@@ -268,7 +267,6 @@ function listenToLobby() {
                 return;
 
             }
-
 
             currentRoomData = room;
 
@@ -283,7 +281,6 @@ function listenToLobby() {
 
                 const player =
                     room.players?.[auth.currentUser.uid];
-
 
                 if (player && player.nickname) {
 
@@ -317,7 +314,6 @@ function renderPlayers(room) {
     const playerCount =
         document.getElementById("lobbyPlayerCount");
 
-
     if (!playersContainer || !playerCount) return;
 
 
@@ -325,14 +321,13 @@ function renderPlayers(room) {
         room.players || {}
     );
 
-
     const onlinePlayers = players.filter(
         ([, player]) => player.online === true
     );
 
 
     playerCount.textContent =
-        `${onlinePlayers.length} / ${room.maxPlayers || 8}`;
+        `${getOnlinePlayerCount(room)} / ${room.maxPlayers || 8}`;
 
 
     if (onlinePlayers.length === 0) {
@@ -357,7 +352,6 @@ function renderPlayers(room) {
             const isHost =
                 playerId === room.hostId;
 
-
             return `
 
                 <div class="lobby-player-card">
@@ -372,7 +366,6 @@ function renderPlayers(room) {
 
                     </div>
 
-
                     <div class="lobby-player-info">
 
                         <strong>
@@ -386,7 +379,6 @@ function renderPlayers(room) {
                         </span>
 
                     </div>
-
 
                     <span class="lobby-online-indicator">
                         Online
@@ -412,22 +404,16 @@ function updateLobbyControls(room) {
     const startButton =
         document.getElementById("startLobbyGame");
 
-
     if (!startButton) return;
 
 
-    const players = Object.values(
-        room.players || {}
-    );
+    const playerId = auth.currentUser?.uid;
 
-
-    const onlinePlayers = players.filter(
-        player => player.online === true
-    );
-
+    const onlinePlayers =
+        getOnlinePlayerCount(room);
 
     const isHost =
-        room.hostId === auth.currentUser?.uid;
+        room.hostId === playerId;
 
 
     if (room.status === "playing") {
@@ -438,6 +424,21 @@ function updateLobbyControls(room) {
 
         updateLobbyStatus(
             "The game is starting."
+        );
+
+        return;
+
+    }
+
+
+    if (room.status !== "waiting") {
+
+        startButton.textContent = "Unavailable";
+
+        startButton.disabled = true;
+
+        updateLobbyStatus(
+            "This room is currently unavailable."
         );
 
         return;
@@ -460,14 +461,29 @@ function updateLobbyControls(room) {
     }
 
 
-    if (onlinePlayers.length < 2) {
+    if (onlinePlayers < 2) {
 
         startButton.textContent = "Waiting for Players";
 
         startButton.disabled = true;
 
         updateLobbyStatus(
-            "At least 2 players are needed to start."
+            "At least 2 online players are needed."
+        );
+
+        return;
+
+    }
+
+
+    if (onlinePlayers > (room.maxPlayers || 8)) {
+
+        startButton.textContent = "Room Limit Exceeded";
+
+        startButton.disabled = true;
+
+        updateLobbyStatus(
+            "The room has exceeded its player limit."
         );
 
         return;
@@ -480,7 +496,7 @@ function updateLobbyControls(room) {
     startButton.disabled = false;
 
     updateLobbyStatus(
-        "Everyone is ready. The host can start."
+        `${onlinePlayers} players online. The host can start.`
     );
 
 }
@@ -495,11 +511,8 @@ function updateLobbyStatus(message) {
     const status =
         document.getElementById("lobbyStatus");
 
-
     if (status) {
-
         status.textContent = message;
-
     }
 
 }
@@ -511,8 +524,6 @@ function updateLobbyStatus(message) {
 
 export function closeLobby() {
 
-    // Stop listening to room updates.
-
     if (roomListener) {
 
         stopWatchingRoomListener(roomListener);
@@ -521,15 +532,9 @@ export function closeLobby() {
 
     }
 
-
-    // Close chat and stop its Firebase listener.
-
     closeChat();
 
     chatInitialized = false;
-
-
-    // Reset lobby state.
 
     currentRoomCode = null;
 
