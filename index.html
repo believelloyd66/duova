@@ -1,0 +1,421 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color" content="#100d18">
+
+    <meta name="description" content="Play online games with friends, wherever they are.">
+
+    <title>DUOVA — Play Together</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <main class="app">
+
+        <!-- HEADER -->
+
+        <header class="topbar">
+
+            <a href="index.html" class="brand">
+
+                <div class="brand-symbol">
+                    <span>D</span>
+                </div>
+
+                <span class="brand-name">DUOVA</span>
+
+            </a>
+
+            <div class="header-right">
+
+                <div class="online-status">
+                    <span class="status-dot"></span>
+                    <span>READY TO PLAY</span>
+                </div>
+
+                <button class="profile-button" id="profileButton" aria-label="Profile">
+                    <span>+</span>
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- INTRODUCTION -->
+
+        <section class="intro">
+
+            <div class="intro-label">
+                <span class="intro-line"></span>
+                YOUR NEXT GAME STARTS HERE
+            </div>
+
+            <h1>
+                Good times.<br>
+                <span>Better together.</span>
+            </h1>
+
+            <p>
+                Pick a game, invite your people and let the fun begin.
+                Distance is not a problem.
+            </p>
+
+            <div class="intro-decoration">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+        </section>
+
+
+        <!-- GAME SELECTION -->
+
+        <section class="games-section">
+
+            <div class="section-heading">
+
+                <div>
+                    <span class="eyebrow">CHOOSE YOUR EXPERIENCE</span>
+                    <h2>Pick a game</h2>
+                </div>
+
+                <div class="swipe-hint">
+                    <span>SWIPE TO EXPLORE</span>
+                    <span class="swipe-arrows">← →</span>
+                </div>
+
+            </div>
+
+
+            <!-- HORIZONTAL SWIPE AREA -->
+
+            <div class="game-carousel" id="gameCarousel">
+
+
+                <!-- TRUTH OR DARE -->
+
+                <article class="game-card truth-card" data-game="truth">
+
+                    <div class="card-glow"></div>
+
+                    <div class="card-top">
+
+                        <span class="game-number">01 / 02</span>
+
+                        <span class="game-tag">SOCIAL GAME</span>
+
+                    </div>
+
+
+                    <div class="truth-visual">
+
+                        <div class="truth-orb orb-one"></div>
+                        <div class="truth-orb orb-two"></div>
+
+                        <div class="truth-symbol">
+                            <span class="truth-letter">T</span>
+                            <span class="truth-divider"></span>
+                            <span class="dare-letter">D</span>
+                        </div>
+
+                        <div class="visual-caption">
+                            TRUTH <span>OR</span> DARE
+                        </div>
+
+                    </div>
+
+
+                    <div class="game-info">
+
+                        <div class="game-category">
+                            SAY IT OR DO IT
+                        </div>
+
+                        <h3>Truth or Dare</h3>
+
+                        <p>
+                            Honest answers, unexpected challenges
+                            and moments you won't forget.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card-bottom">
+
+                        <div class="player-info">
+                            <span class="player-icon">◎</span>
+                            <span>2–8 PLAYERS</span>
+                        </div>
+
+                        <button class="play-button" data-select-game="truth">
+
+                            <span>Play now</span>
+                            <span class="button-arrow">↗</span>
+
+                        </button>
+
+                    </div>
+
+                </article>
+
+
+
+                <!-- WHEEL SPIN -->
+
+                <article class="game-card wheel-card" data-game="wheel">
+
+                    <div class="card-glow"></div>
+
+                    <div class="card-top">
+
+                        <span class="game-number">02 / 02</span>
+
+                        <span class="game-tag gold-tag">LUCK & CHOICE</span>
+
+                    </div>
+
+
+                    <div class="wheel-visual">
+
+                        <div class="wheel-halo"></div>
+
+                        <div class="wheel-ring">
+
+                            <div class="wheel-face">
+
+                                <div class="wheel-segment segment-one"></div>
+                                <div class="wheel-segment segment-two"></div>
+                                <div class="wheel-segment segment-three"></div>
+                                <div class="wheel-segment segment-four"></div>
+                                <div class="wheel-segment segment-five"></div>
+                                <div class="wheel-segment segment-six"></div>
+
+                                <div class="wheel-center">
+                                    <span>SPIN</span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="wheel-pointer"></div>
+
+                    </div>
+
+
+                    <div class="game-info">
+
+                        <div class="game-category gold-category">
+                            LET FATE DECIDE
+                        </div>
+
+                        <h3>Wheel Spin</h3>
+
+                        <p>
+                            Give the wheel a spin and see what
+                            challenge or surprise awaits.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card-bottom">
+
+                        <div class="player-info">
+                            <span class="player-icon">◎</span>
+                            <span>2–8 PLAYERS</span>
+                        </div>
+
+                        <button class="play-button wheel-play" data-select-game="wheel">
+
+                            <span>Play now</span>
+                            <span class="button-arrow">↗</span>
+
+                        </button>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+
+            <!-- CAROUSEL CONTROLS -->
+
+            <div class="carousel-navigation">
+
+                <button
+                    class="carousel-arrow"
+                    id="previousGame"
+                    aria-label="Previous game"
+                    type="button">
+                    ←
+                </button>
+
+                <div class="carousel-progress" id="carouselProgress">
+
+                    <span class="progress-active"></span>
+                    <span></span>
+
+                </div>
+
+                <button
+                    class="carousel-arrow"
+                    id="nextGame"
+                    aria-label="Next game"
+                    type="button">
+                    →
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- CREATE OR JOIN ROOM -->
+
+        <section class="room-section" id="roomSection">
+
+            <div class="room-heading">
+
+                <div>
+                    <span class="eyebrow">PLAY WITH YOUR PEOPLE</span>
+                    <h2>Get in the game</h2>
+                </div>
+
+                <p>
+                    Create a private room or enter a room code
+                    to join someone already playing.
+                </p>
+
+            </div>
+
+
+            <div class="room-panel">
+
+                <div class="room-input-group">
+
+                    <label for="playerName">YOUR NICKNAME</label>
+
+                    <input
+                        type="text"
+                        id="playerName"
+                        maxlength="18"
+                        placeholder="Enter your nickname"
+                        autocomplete="nickname">
+
+                </div>
+
+
+                <div class="room-actions">
+
+
+                    <!-- CREATE ROOM -->
+
+                    <button
+                        class="create-room-button"
+                        id="createRoomButton"
+                        type="button">
+
+                        <span class="room-button-icon">+</span>
+
+                        <span class="room-button-text">
+                            <strong>Create a room</strong>
+                            <small>Start a new game with friends</small>
+                        </span>
+
+                        <span class="room-button-arrow">↗</span>
+
+                    </button>
+
+
+                    <div class="room-divider">
+                        OR
+                    </div>
+
+
+                    <!-- JOIN ROOM -->
+
+                    <div class="join-room-group">
+
+                        <input
+                            type="text"
+                            id="roomCode"
+                            maxlength="8"
+                            placeholder="Enter room code"
+                            autocomplete="off">
+
+                        <button
+                            class="join-room-button"
+                            id="joinRoomButton"
+                            type="button">
+
+                            <span>Join room</span>
+                            <span>→</span>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="room-security">
+
+                    <span class="security-icon">◇</span>
+
+                    <span>
+                        Private rooms. Invite-only gameplay.
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- FOOTER -->
+
+        <footer class="footer">
+
+            <span class="footer-brand">DUOVA</span>
+
+            <p>Different places. Same game.</p>
+
+            <div class="footer-status">
+                <span class="status-dot"></span>
+                ONLINE EXPERIENCE
+            </div>
+
+        </footer>
+
+    </main>
+
+
+    <!-- JAVASCRIPT WILL BE CONNECTED LATER -->
+
+    <script type="module" src="js/app.js"></script>
+
+</body>
+</html>
