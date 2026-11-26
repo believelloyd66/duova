@@ -16,9 +16,17 @@ import {
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 
 
-// ==========================================
-// 1. PLAYER AUTHENTICATION
-// ==========================================
+/* ==========================================
+   DUOVA — MULTIPLAYER SYSTEM
+   ========================================== */
+
+const MIN_PLAYERS = 2;
+const MAX_PLAYERS = 8;
+
+
+/* ==========================================
+   01. PLAYER AUTHENTICATION
+   ========================================== */
 
 export async function signInPlayer() {
 
@@ -29,46 +37,81 @@ export async function signInPlayer() {
     const result = await signInAnonymously(auth);
 
     return result.user;
+
 }
 
 
-// ==========================================
-// 2. GENERATE ROOM CODE
-// ==========================================
+/* ==========================================
+   02. GENERATE ROOM CODE
+   ========================================== */
 
 function generateRoomCode() {
 
-    const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const characters =
+        "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
     const randomValues = new Uint8Array(6);
 
     crypto.getRandomValues(randomValues);
 
     return Array.from(randomValues)
-        .map(value => characters[value % characters.length])
+        .map(value =>
+            characters[value % characters.length]
+        )
         .join("");
+
 }
 
 
-// ==========================================
-// 3. VALIDATE NICKNAME
-// ==========================================
+/* ==========================================
+   03. VALIDATE NICKNAME
+   ========================================== */
 
 function validateNickname(nickname) {
+
+    if (typeof nickname !== "string") {
+        throw new Error("Enter a valid nickname.");
+    }
 
     const name = nickname.trim();
 
     if (name.length < 2 || name.length > 18) {
-        throw new Error("Nickname must contain 2–18 characters.");
+        throw new Error(
+            "Nickname must contain 2–18 characters."
+        );
     }
 
     return name;
+
 }
 
 
-// ==========================================
-// 4. PLAYER ONLINE PRESENCE
-// ==========================================
+/* ==========================================
+   04. VALIDATE ROOM CODE
+   ========================================== */
+
+function validateRoomCode(code) {
+
+    if (typeof code !== "string") {
+        throw new Error("Enter a valid room code.");
+    }
+
+    const roomCode = code.trim().toUpperCase();
+
+    if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
+        throw new Error(
+            "Enter a valid 6-character room code."
+        );
+    }
+
+    return roomCode;
+
+}
+
+
+/* ==========================================
+   05. PLAYER ONLINE PRESENCE
+   ========================================== */
 
 async function registerPlayerPresence(roomCode, playerId) {
 
@@ -77,15 +120,20 @@ async function registerPlayerPresence(roomCode, playerId) {
         `rooms/${roomCode}/players/${playerId}/online`
     );
 
+    // Register automatic offline status when disconnected.
+
     await onDisconnect(onlineRef).set(false);
 
+    // Mark this player as online.
+
     await set(onlineRef, true);
+
 }
 
 
-// ==========================================
-// 5. CREATE ONLINE ROOM
-// ==========================================
+/* ==========================================
+   06. CREATE ONLINE ROOM
+   ========================================== */
 
 export async function createOnlineRoom(nickname, game) {
 
@@ -100,13 +148,15 @@ export async function createOnlineRoom(nickname, game) {
     }
 
     let roomCode = null;
-    let roomCreated = false;
 
     for (let attempt = 0; attempt < 5; attempt++) {
 
         const newCode = generateRoomCode();
 
-        const roomRef = ref(db, `rooms/${newCode}`);
+        const roomRef = ref(
+            db,
+            `rooms/${newCode}`
+        );
 
         const roomData = {
 
@@ -118,7 +168,7 @@ export async function createOnlineRoom(nickname, game) {
 
             status: "waiting",
 
-            maxPlayers: 8,
+            maxPlayers: MAX_PLAYERS,
 
             createdAt: serverTimestamp(),
 
@@ -136,9 +186,7 @@ export async function createOnlineRoom(nickname, game) {
 
                 }
 
-            },
-
-            chat: {}
+            }
 
         };
 
@@ -159,30 +207,39 @@ export async function createOnlineRoom(nickname, game) {
 
             roomCode = newCode;
 
-            roomCreated = true;
-
             break;
 
         }
+
     }
 
-    if (!roomCreated) {
-        throw new Error("Could not create a room. Please try again.");
+    if (!roomCode) {
+        throw new Error(
+            "Could not create a room. Please try again."
+        );
     }
 
-    await registerPlayerPresence(roomCode, playerId);
+    await registerPlayerPresence(
+        roomCode,
+        playerId
+    );
 
     return {
+
         code: roomCode,
+
         playerId: playerId,
+
         isHost: true
+
     };
+
 }
 
 
-// ==========================================
-// 6. JOIN EXISTING ROOM
-// ==========================================
+/* ==========================================
+   07. JOIN EXISTING ROOM
+   ========================================== */
 
 export async function joinOnlineRoom(nickname, enteredCode) {
 
@@ -192,83 +249,166 @@ export async function joinOnlineRoom(nickname, enteredCode) {
 
     const playerName = validateNickname(nickname);
 
-    const roomCode = enteredCode.trim().toUpperCase();
+    const roomCode = validateRoomCode(enteredCode);
 
-    if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
-        throw new Error("Enter a valid 6-character room code.");
-    }
-
-    const roomRef = ref(db, `rooms/${roomCode}`);
+    const roomRef = ref(
+        db,
+        `rooms/${roomCode}`
+    );
 
     const roomSnapshot = await get(roomRef);
 
     if (!roomSnapshot.exists()) {
-        throw new Error("Room not found. Check the code.");
+        throw new Error(
+            "Room not found. Check the code."
+        );
     }
 
     const room = roomSnapshot.val();
 
     if (room.status !== "waiting") {
-        throw new Error("This game has already started.");
+        throw new Error(
+            "This game has already started."
+        );
     }
 
     if (!room.players) {
-        throw new Error("This room has no player list.");
+        throw new Error(
+            "This room has no player list."
+        );
     }
-
-    const existingPlayer = room.players[playerId];
 
     const playerRef = ref(
         db,
         `rooms/${roomCode}/players/${playerId}`
     );
 
-    // Add the player only if they are not already registered.
+    const existingPlayer = room.players[playerId];
 
-    if (!existingPlayer) {
+    // Check whether this player is already registered.
 
-        const playerCount = Object.keys(room.players).length;
+    if (existingPlayer) {
 
-        if (playerCount >= room.maxPlayers) {
-            throw new Error("This room is full.");
+        if (existingPlayer.isHost === true &&
+            room.hostId !== playerId) {
+
+            throw new Error(
+                "Room membership could not be verified."
+            );
+
         }
 
-        await set(playerRef, {
+    } else {
 
-            nickname: playerName,
+        // Count currently registered players.
 
-            online: true,
+        const playerCount = Object.keys(
+            room.players
+        ).length;
 
-            isHost: false,
+        if (playerCount >= MAX_PLAYERS) {
+            throw new Error(
+                "This room is full."
+            );
+        }
 
-            joinedAt: Date.now()
+        // Register the new player without overwriting
+        // an existing player record.
 
-        });
+        const result = await runTransaction(
+            playerRef,
+            currentPlayer => {
+
+                if (currentPlayer === null) {
+
+                    return {
+
+                        nickname: playerName,
+
+                        online: true,
+
+                        isHost: false,
+
+                        joinedAt: Date.now()
+
+                    };
+
+                }
+
+                return;
+
+            }
+        );
+
+        if (!result.committed) {
+
+            if (!result.snapshot.exists()) {
+                throw new Error(
+                    "Could not join the room. Try again."
+                );
+            }
+
+        }
 
     }
 
-    // Register presence for both new and returning players.
+    // Confirm that the room is still waiting.
 
-    await registerPlayerPresence(roomCode, playerId);
+    const latestRoomSnapshot = await get(roomRef);
+
+    if (!latestRoomSnapshot.exists()) {
+        throw new Error("This room no longer exists.");
+    }
+
+    const latestRoom = latestRoomSnapshot.val();
+
+    if (latestRoom.status !== "waiting") {
+        throw new Error(
+            "This game has already started."
+        );
+    }
+
+    if (!latestRoom.players?.[playerId]) {
+        throw new Error(
+            "Your player registration could not be verified."
+        );
+    }
+
+    await registerPlayerPresence(
+        roomCode,
+        playerId
+    );
 
     return {
+
         code: roomCode,
+
         playerId: playerId,
-        isHost: playerId === room.hostId
+
+        isHost: playerId === latestRoom.hostId
+
     };
+
 }
 
 
-// ==========================================
-// 7. LISTEN TO ROOM CHANGES
-// ==========================================
+/* ==========================================
+   08. LISTEN TO ROOM CHANGES
+   ========================================== */
 
 export function watchRoom(roomCode, callback) {
 
-    const roomRef = ref(db, `rooms/${roomCode}`);
+    const validCode = validateRoomCode(roomCode);
+
+    const roomRef = ref(
+        db,
+        `rooms/${validCode}`
+    );
 
     return onValue(
+
         roomRef,
+
         snapshot => {
 
             if (!snapshot.exists()) {
@@ -279,23 +419,65 @@ export function watchRoom(roomCode, callback) {
             callback(snapshot.val());
 
         },
+
         error => {
 
-            console.error("ROOM LISTENER ERROR:", error);
+            console.error(
+                "DUOVA ROOM LISTENER ERROR:",
+                error
+            );
 
         }
+
     );
+
 }
 
 
-// ==========================================
-// 8. STOP WATCHING ROOM
-// ==========================================
+/* ==========================================
+   09. STOP WATCHING ROOM
+   ========================================== */
 
 export function stopWatchingRoomListener(listener) {
 
     if (typeof listener === "function") {
         listener();
     }
+
+}
+
+
+/* ==========================================
+   10. PLAYER COUNT HELPERS
+   ========================================== */
+
+export function getOnlinePlayerCount(room) {
+
+    if (!room?.players) {
+        return 0;
+    }
+
+    return Object.values(room.players)
+        .filter(player => player.online === true)
+        .length;
+
+}
+
+
+export function canStartGame(room, playerId) {
+
+    if (!room || !playerId) {
+        return false;
+    }
+
+    const onlinePlayers =
+        getOnlinePlayerCount(room);
+
+    return (
+        room.status === "waiting" &&
+        room.hostId === playerId &&
+        onlinePlayers >= MIN_PLAYERS &&
+        onlinePlayers <= MAX_PLAYERS
+    );
 
 }
