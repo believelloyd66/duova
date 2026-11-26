@@ -17,22 +17,12 @@ import {
    DUOVA — ROOM CHAT
    ========================================= */
 
-
-/* =========================================
-   01. CHAT STATE
-   ========================================= */
-
 let currentChatRoom = null;
 let chatListener = null;
 let chatNickname = null;
 
 let chatMessages = [];
 let chatOpen = false;
-
-
-/* =========================================
-   02. CHAT ELEMENTS
-   ========================================= */
 
 let chatContainer = null;
 let chatMessagesContainer = null;
@@ -42,7 +32,7 @@ let chatToggleButton = null;
 
 
 /* =========================================
-   03. HTML ESCAPING
+   01. HTML ESCAPING
    ========================================= */
 
 function escapeChatHTML(value) {
@@ -65,7 +55,7 @@ function escapeChatHTML(value) {
 
 
 /* =========================================
-   04. INITIALIZE CHAT
+   02. INITIALIZE CHAT
    ========================================= */
 
 export function initializeChat(roomCode, nickname) {
@@ -89,17 +79,10 @@ export function initializeChat(roomCode, nickname) {
 
 
 /* =========================================
-   05. CREATE CHAT INTERFACE
+   03. CREATE CHAT INTERFACE
    ========================================= */
 
 function createChatInterface() {
-
-    const existingChat =
-        document.getElementById("duovaChat");
-
-    if (existingChat) {
-        existingChat.remove();
-    }
 
     chatContainer = document.createElement("div");
 
@@ -117,7 +100,6 @@ function createChatInterface() {
             <span>Chat</span>
             <span id="chatUnreadCount"></span>
         </button>
-
 
         <section
             class="duova-chat-panel"
@@ -146,7 +128,6 @@ function createChatInterface() {
 
             </header>
 
-
             <div
                 class="duova-chat-messages"
                 id="chatMessages"
@@ -157,7 +138,6 @@ function createChatInterface() {
                     Connecting to room chat...
                 </p>
             </div>
-
 
             <form
                 class="duova-chat-form"
@@ -186,9 +166,7 @@ function createChatInterface() {
 
     `;
 
-
     document.body.appendChild(chatContainer);
-
 
     chatMessagesContainer =
         document.getElementById("chatMessages");
@@ -202,14 +180,13 @@ function createChatInterface() {
     chatToggleButton =
         document.getElementById("chatToggle");
 
-
     setupChatEvents();
 
 }
 
 
 /* =========================================
-   06. CHAT EVENTS
+   04. CHAT EVENTS
    ========================================= */
 
 function setupChatEvents() {
@@ -220,20 +197,13 @@ function setupChatEvents() {
     const chatClose =
         document.getElementById("chatClose");
 
-
     chatToggleButton.addEventListener("click", () => {
-
         toggleChat();
-
     });
-
 
     chatClose.addEventListener("click", () => {
-
         toggleChat(false);
-
     });
-
 
     chatForm.addEventListener("submit", async event => {
 
@@ -247,7 +217,7 @@ function setupChatEvents() {
 
 
 /* =========================================
-   07. OPEN / CLOSE CHAT
+   05. OPEN / CLOSE CHAT
    ========================================= */
 
 function toggleChat(forceState = null) {
@@ -286,7 +256,7 @@ function toggleChat(forceState = null) {
 
 
 /* =========================================
-   08. LISTEN FOR MESSAGES
+   06. LISTEN FOR MESSAGES
    ========================================= */
 
 function listenForMessages() {
@@ -297,7 +267,7 @@ function listenForMessages() {
 
         ref(
             db,
-            `rooms/${currentChatRoom}/chat`
+            `roomChats/${currentChatRoom}`
         ),
 
         orderByChild("createdAt"),
@@ -305,7 +275,6 @@ function listenForMessages() {
         limitToLast(50)
 
     );
-
 
     chatListener = onValue(
 
@@ -327,7 +296,6 @@ function listenForMessages() {
 
             });
 
-
             renderChatMessages();
 
         },
@@ -339,13 +307,17 @@ function listenForMessages() {
                 error
             );
 
-            chatMessagesContainer.innerHTML = `
+            if (chatMessagesContainer) {
 
-                <p class="chat-empty">
-                    Unable to load messages.
-                </p>
+                chatMessagesContainer.innerHTML = `
 
-            `;
+                    <p class="chat-empty">
+                        Unable to load messages.
+                    </p>
+
+                `;
+
+            }
 
         }
 
@@ -355,7 +327,7 @@ function listenForMessages() {
 
 
 /* =========================================
-   09. RENDER MESSAGES
+   07. RENDER MESSAGES
    ========================================= */
 
 function renderChatMessages() {
@@ -376,7 +348,6 @@ function renderChatMessages() {
 
     }
 
-
     chatMessagesContainer.innerHTML =
 
         chatMessages.map(message => {
@@ -392,7 +363,6 @@ function renderChatMessages() {
 
             const time =
                 formatMessageTime(message.createdAt);
-
 
             return `
 
@@ -417,7 +387,6 @@ function renderChatMessages() {
 
         }).join("");
 
-
     chatMessagesContainer.scrollTop =
         chatMessagesContainer.scrollHeight;
 
@@ -425,7 +394,7 @@ function renderChatMessages() {
 
 
 /* =========================================
-   10. FORMAT MESSAGE TIME
+   08. FORMAT MESSAGE TIME
    ========================================= */
 
 function formatMessageTime(timestamp) {
@@ -450,7 +419,7 @@ function formatMessageTime(timestamp) {
 
 
 /* =========================================
-   11. SEND MESSAGE
+   09. SEND MESSAGE
    ========================================= */
 
 async function sendChatMessage() {
@@ -461,17 +430,12 @@ async function sendChatMessage() {
 
     const message = chatInput.value.trim();
 
-    if (!message) return;
-
-    if (message.length > 500) {
+    if (!message || message.length > 500) {
         return;
     }
 
-
     chatSendButton.disabled = true;
-
     chatInput.disabled = true;
-
 
     try {
 
@@ -479,13 +443,11 @@ async function sendChatMessage() {
 
             db,
 
-            `rooms/${currentChatRoom}/chat`
+            `roomChats/${currentChatRoom}`
 
         );
 
-
         const newMessageRef = push(messagesRef);
-
 
         await set(newMessageRef, {
 
@@ -499,9 +461,7 @@ async function sendChatMessage() {
 
         });
 
-
         chatInput.value = "";
-
 
     } catch (error) {
 
@@ -517,7 +477,6 @@ async function sendChatMessage() {
     } finally {
 
         chatSendButton.disabled = false;
-
         chatInput.disabled = false;
 
         chatInput.focus();
@@ -528,46 +487,34 @@ async function sendChatMessage() {
 
 
 /* =========================================
-   12. CLOSE AND CLEAN UP CHAT
+   10. CLOSE AND CLEAN UP CHAT
    ========================================= */
 
 export function closeChat() {
 
     if (typeof chatListener === "function") {
-
         chatListener();
-
     }
 
     chatListener = null;
 
     currentChatRoom = null;
-
     chatNickname = null;
 
     chatMessages = [];
-
     chatOpen = false;
-
 
     const existingChat =
         document.getElementById("duovaChat");
 
     if (existingChat) {
-
         existingChat.remove();
-
     }
 
-
     chatContainer = null;
-
     chatMessagesContainer = null;
-
     chatInput = null;
-
     chatSendButton = null;
-
     chatToggleButton = null;
 
 }
